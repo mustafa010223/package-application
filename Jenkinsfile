@@ -1,22 +1,36 @@
 pipeline {
     agent any
+    triggers {
+        // GitHub webhook tetikleyicisini kullanarak GitHub'dan push geldiğinde pipeline başlatılacak
+        githubPush()
+    }
     stages {
+        stage('Checkout') {
+            steps {
+                // GitHub'dan kaynak kodlarını çekiyoruz
+                checkout scm
+            }
+        }
         stage('Test') {
             steps {
+                // Maven test komutunu çalıştırıyoruz
                 sh 'mvn -f hello-app/pom.xml test'
             }
             post {
                 always {
+                    // Test sonuçlarını junit ile raporluyoruz
                     junit 'hello-app/target/surefire-reports/*.xml'
                 }
             }
         }
         stage('Build') {
             steps {
+                // Maven clean ve package işlemini yapıyoruz
                 sh 'mvn -f hello-app/pom.xml -B -DskipTests clean package'
             }
             post {
                 success {
+                    // Başarıyla build işlemi tamamlandığında artefaktları arşivliyoruz
                     echo "Now Archiving the Artifacts....."
                     archiveArtifacts artifacts: '**/*.jar'
                 }
@@ -24,3 +38,4 @@ pipeline {
         }
     }
 }
+
